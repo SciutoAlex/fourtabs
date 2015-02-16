@@ -7,14 +7,22 @@
     "page" : "bg.html",
     "persistent" : true
   },
+  "content_scripts": [
+    {
+      "matches" : ["<all_urls>"],
+      "js": ["urlListener.js"]
+    }
+  ],
   "content_security_policy": "script-src 'self' https://cdn.firebase.com https://*.firebaseio.com; object-src 'self'",
   "browser_action": {
     "default_icon": "icon.png",
     "default_popup": "popup.html"
   },
+  "options_page": "options.html",
   "permissions": [
     "tabs",
     "activeTab",
+    "webNavigation",
     "storage",
     "https://ajax.googleapis.com/"
   ]

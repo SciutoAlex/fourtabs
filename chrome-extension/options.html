@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head><title>My Test Extension Options</title></head>
+<style>
+body {
+  width:500px;
+  margin:0px auto;
+}
+</style>
+<body>
+
+<h2>Four Tabs</h2>
+<section>
+  <h3>Unique String</h3>
+  <p>Your unique string which identifies you to our server is <br/><span id="uid"></span></p>
+</section>
+<section>
+  <h3>Sites to Ignore</h3>
+  <h5>Sites to Completely Ignore</h5>
+  <p>These hostnames will be completely ignored by the extension. For example, "google.com", will exclude all mail, documents, and search information. "www.google.com" will only ignore searches on google.com</p>
+  <textarea id="completelyIgnore"></textarea>
+  <h5>Sites to only report Hostname</h5>
+  <p>For these hostnames, the extension will only report the hostname, without any additional extension. For example, if you include "mail.google.com", the url "https://mail.google.com/mail/u/0/#inbox/14b430d3e97" will be reported as "https://mail.google.com/"</p>
+  <textarea id="curtailIgnore"></textarea><br/>
+  <button id="saveURLPrefs">Save URL Prefs</button>
+  <h5>Test it</h5>
+  <p>Paste in a url, and see what will be reported based on the last saved changes. You must add the entire url to see a correct result. This includes the http:// part.</p>
+  <input type="text" id="urlToSanitize"></input>
+  <p id="sanitizeOutput"></p></p>
+</section>
+
+<script src="https://cdn.firebase.com/js/client/2.2.0/firebase.js"></script>
+<script src="common.js"></script>
+<script src="lodash.js"></script>
+<script src="options.js"></script>
+</body>
+</html>

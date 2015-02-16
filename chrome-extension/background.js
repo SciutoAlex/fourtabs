@@ -1,10 +1,18 @@
-
-
-
 init();
 
+
+
 function init() {
+
   var orderedListOfUrls = [];
+
+  Object.observe(orderedListOfUrls, function() {
+    console.log('list::::::::');
+    orderedListOfUrls.map(function(m) {
+      console.log(m.id + "-" + m.url);
+    })
+  })
+
   var id = "";
   getIdentification(function(val) {
     id = val;
@@ -15,132 +23,86 @@ function init() {
 
   console.log('extension started!');
 
-
-  chrome.tabs.onHighlighted.addListener(function(highlightInfo){
-    chrome.tabs.get(highlightInfo.tabIds[0], function(tab) {
-      updateURLinList(orderedListOfUrls, tab.url);
-      console.log(orderedListOfUrls);
-    });
-  });
-
-  chrome.tabs.onRemoved.addListener(function(highlightInfo){
-    chrome.tabs.get(highlightInfo, function(tab) {
-      console.log(tab);
-      removeURLfromListofURLS(orderedListOfUrls, tab.url);
-      console.log(orderedListOfUrls);
-    });
-  });
-}
-
-
-
-// Get the stored id of the user. A random string
-// ==============================================
-function getIdentification(cb) {
-  chrome.storage.sync.get('userRandId', function(items) {
-      var userRandId = items.userRandId;
-      if (userRandId) {
-        useToken(userRandId);
-      } else {
-        userRandId = getRandomToken();
-        chrome.storage.sync.set({userRandId: userRandId}, function() {
-          useToken(userRandId);
-        });
-      }
-      function useToken(userRandId) {
-        cb(userRandId);
-      }
-  });
-}
-
-
-function removeURLfromListofURLS(list, url) {
-  var url = sanitizeUrl(url);
-  if(url && list.indexOf(url) != -1) {
-    list.splice(list.indexOf(url),1);
-  }
-}
-
-function updateURLinList(list, url) {
-  var url = sanitizeUrl(url);
-  if(url && list.indexOf(url) != -1) {
-    list.splice(list.indexOf(url),1);
-    list.push(url);
-  } else {
-    list.push(url);
-  }
-}
-
-function addURLtoListofURLS(list, url) {
-  var url = sanitizeUrl(url);
-  if(url) {
-    list.push(url);
-    return true;
-  }
-  return false;
-}
-
-
-var hostnamesToExclude = [
-  "www.linkedin.com",
-  "www.glassdoor.com",
-  "www.quora.com",
-  "www.google.com"
-];
-
-var protocolsToInclude = [
-  "http:",
-  "https:"
-]
-
-// Remove sensitive URLs
-// ---------------------
-function sanitizeUrl(urlString) {
-  var urlParts = document.createElement('a');
-  urlParts.href = urlString;
-
-  var urlToReturn = "";
-  if (
-      (_.indexOf(hostnamesToExclude, urlParts.hostname) == -1) &&
-      (_.indexOf(protocolsToInclude, urlParts.protocol) != -1)
-    ) {
-    urlToReturn = urlString;
-  }
-  return encodeURI(urlToReturn);
-}
-
-
-// Get all the URLs from all the pages
-// cb([urlStrings])
-// -----------------------------------
-
-function getAllUrls(cb) {
-  var arrayToReturn = [];
-  chrome.windows.getAll({"populate" : true}, function(windows) {
-    for(var i = 0; i < windows.length; i++) {
-      for(var j = 0; j < windows[i].tabs.length; j++) {
-        console.log(windows[i].tabs[j]);
-        var url = sanitizeUrl(windows[i].tabs[j].url);
-        if(url) {
-          arrayToReturn.push(url);
-        }
-       }
-     }
-     cb(arrayToReturn);
-  });
-}
-
-
-// Create a Unique ID for each user
-// ================================
-function getRandomToken() {
-    // E.g. 8 * 32 = 256 bits token
-    var randomPool = new Uint8Array(32);
-    crypto.getRandomValues(randomPool);
-    var hex = '';
-    for (var i = 0; i < randomPool.length; ++i) {
-        hex += randomPool[i].toString(16);
+  // Listen for when a message is sent from a page that the url has changed.
+  // Then update the url for that tab.
+  // -------------------
+  chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+    console.log('url updated ' + sender.tab.id);
+    var indexToUpdate = _.findIndex(orderedListOfUrls, { 'id': sender.tab.id });
+    if(indexToUpdate != -1) {
+      orderedListOfUrls[indexToUpdate].url = sanitizeUrl(sender.url);
     }
-    // E.g. db18458e2782b2b77e36769c569e263a53885a9944dd0a861e5064eac16f1a
-    return hex;
+
+    // orderedListOfUrls.map(function(m) {
+    //   console.log(m.id + "-" + m.url);
+    // });
+  });
+
+  // Listen for when a tab has been activated--brought to the front.
+  // Then reorder the array placing it at the end.
+  // -------------------
+  chrome.tabs.onActivated.addListener(function(activatedTab){
+    console.log("tab activated - " + activatedTab.tabId);
+    // console.log('tab id ' + activatedTab.tabId);
+    var indexToBringToTop = _.findIndex(orderedListOfUrls, { 'id': activatedTab.tabId });
+    // console.log("moved index: " + indexToBringToTop);
+    if (indexToBringToTop != -1) {
+      var objMoving = orderedListOfUrls[indexToBringToTop];
+      orderedListOfUrls.splice(indexToBringToTop,1);
+      orderedListOfUrls.push(objMoving);
+    } else {
+      chrome.tabs.get(activatedTab.tabId, function(tab) {
+        // console.log('tab added id:')
+        // console.log(tab.id);
+        orderedListOfUrls.push({
+          id : tab.id,
+          url : sanitizeUrl(tab.url)
+        });
+      })
+    }
+  });
+
+  // Listen for when a tab is created.
+  // Then add a new entry to the orderedList array.
+  // -------------------
+  chrome.tabs.onCreated.addListener(function(tab) {
+    console.log('tab added - ' + tab.id);
+    orderedListOfUrls.push({
+      url : null,
+      id : tab.id
+    });
+  });
+
+  // Listen for when a tab is removed.
+  // Then remove that entry to the orderedList array.
+  // -------------------
+  chrome.tabs.onRemoved.addListener(function(tabId) {
+    console.log('tab removed - ' + tabId);
+    // console.log(tabId);
+    var indexToRemove = _.findIndex(orderedListOfUrls, { 'id': tabId });
+    // console.log(indexToRemove);
+    if(indexToRemove != -1) {
+      orderedListOfUrls.splice(indexToRemove,1);
+    }
+  });
+
+  // Google tries to preload pages, and because of this, the tabId sometimes changes.
+  // Check when an Id has changed and then update the id.
+  // -------------------
+  chrome.tabs.onReplaced.addListener(function(addedTabId, removedTabId) {
+    console.log('tab onReplaced - added:'+addedTabId+' replaced: '+removedTabId);
+    var indexToChange = _.findIndex(orderedListOfUrls, { 'id': removedTabId });
+    orderedListOfUrls[indexToChange].id = addedTabId;
+  });
+
+  // In search results, Google preloads pages, this fires when Google pre-loads a result.
+  // Check when an Id has changed and then update the id.
+  // -------------------
+
+  // chrome.webNavigation.onTabReplaced.addListener(function(removedTabId, addedTabId) {
+  //   console.log('webnav onReplaced - added:'+addedTabId+' replaced: '+removedTabId);
+  //   var indexToChange = _.findIndex(orderedListOfUrls, { 'id': removedTabId });
+  //   orderedListOfUrls[indexToChange].id = addedTabId;
+  // });
+
 }
