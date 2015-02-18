@@ -19,3 +19,10 @@ Icon
 Network Trash Folder
 Temporary Items
 .apdisk
+
+# Ignore private variables
+server/configs
+
+# node ignore
+server/node_modules
+heroku-app

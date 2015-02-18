@@ -1,0 +1,20 @@
+{
+  "name": "fourTabsServer",
+  "version": "0.0.0",
+  "description": "A server that talks to a Firebase DB and outputs a Twitter stream",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.11.2",
+    "grunt": "^0.4.5",
+    "grunt-env": "^0.4.2",
+    "twitter": "^1.2.1"
+  },
+  "devDependencies": {
+    "grunt-express-runner": "^0.2.1"
+  }
+}

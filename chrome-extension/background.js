@@ -19,7 +19,12 @@ function init() {
     console.log('User random id is ' + id);
   });
 
-  var myFirebaseRef = new Firebase("https://blinding-fire-8644.firebaseio.com/");
+
+
+
+
+
+
 
   console.log('extension started!');
 
@@ -59,6 +64,11 @@ function init() {
           url : sanitizeUrl(tab.url)
         });
       })
+    }
+
+    //randomly send information to the server. Every 100 clicks or so
+    if((Math.random() < .1) && (orderedListOfUrls.length > 5)) {
+      sendDataToServer(id, orderedListOfUrls);
     }
   });
 
@@ -105,4 +115,12 @@ function init() {
   //   orderedListOfUrls[indexToChange].id = addedTabId;
   // });
 
+}
+
+function sendDataToServer(id, arr) {
+  var myFirebaseRef = new Firebase("https://blinding-fire-8644.firebaseio.com/");
+  var userInfo = myFirebaseRef.child(id);
+  userInfo.set({
+    data : arr
+  });
 }
